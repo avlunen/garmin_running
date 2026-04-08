@@ -6,4 +6,6 @@ To run: <tt>./garminrun &lt;path to folder with Fit files&gt;</tt>
 
 The app does not connect to the Garmin device as such. Rather, it reads Fit files from a directory. Which means you can either download these files from your device, or hook your device up on a USB cable, which should make it available as drive (similar to a USB stick) in your OS, and then use the path to your Activities folder on your device as argument to get to the Fit files without downloading them. The app will create a sub-folder named "output" in the folder where it is run from in which it will write the output files.
 
+This will need some more testing (only have the Garmin G1) and fine tuning. Looking into how to access the data via Bluetooth.
+
 Uses the Garmin Fit SDK (from NuGet) and <a href="https://github.com/rosspickard/ArcShapeFile/tree/master">ArcShapeFile</a> (included in this project).
