@@ -18,6 +18,8 @@ using System.Linq;
 *   @author Alexander von Lunen
 *   @since 07 Apr 2026
 *   @version 0.9
+*   @since 15 Apr 2026
+*   @version 0.91
 */
 public class GarminRunningDecode
 {
@@ -47,7 +49,7 @@ public class GarminRunningDecode
       return (int)(degrees * (2147483648.0/180.0));
    }
 
-   public void DecodeGarmin(string dir, string fn)
+   public void DecodeGarmin(string dir, string fn, bool statsOnly = false)
    {
       ShapeFile myShape = new ShapeFile();
       FileStream fitSource = null;
@@ -62,11 +64,13 @@ public class GarminRunningDecode
       DirectoryInfo di;
 
       try {
-         if(!dir.EndsWith("/")) fitfilename += "/";
+         if(!dir.EndsWith("/") && dir != "") fitfilename += "/";
          fitfilename += fn;
 
          // Assumes that filenames end in ".fit"
-         fnstem = fn.Substring(0, fn.Length - 4);
+         int pos = fn.LastIndexOf("/");
+         if(pos == -1) pos = 0;
+         fnstem = fn.Substring(pos+1, fn.Length-(pos+5));
 
          // Attempt to open .FIT file
          fitSource = new FileStream(fitfilename, FileMode.Open);
@@ -103,30 +107,39 @@ public class GarminRunningDecode
             di = Directory.CreateDirectory(subDir);
 
          // write data files
-         fs_data = new FileStream(subDir + "run-"+fnstem+".csv", FileMode.Create);
          fs_stats = new FileStream(subDir + "run-"+fnstem+"_stats.csv", FileMode.Create);
-         w_data = new StreamWriter(fs_data, Encoding.UTF8);
          w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
-         w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
          w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(mins),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
 
-         // Write shapefile
-         myShape.Open(subDir+"run-"+fnstem+".shp", eShapeType.shpPoint);
-         
-         myShape.Fields.Add("Date", eFieldType.shpDate);
-         myShape.Fields.Add("Time", eFieldType.shpText);
-         myShape.Fields.Add("altitude", eFieldType.shpFloat);
-         myShape.Fields.Add("heart_rate", eFieldType.shpNumeric, 3, 0);
-         myShape.Fields.Add("distance", eFieldType.shpFloat);
-         myShape.Fields.Add("speed", eFieldType.shpFloat);
+         if(statsOnly == false) {
+            fs_data = new FileStream(subDir + "run-"+fnstem+".csv", FileMode.Create);
+            w_data = new StreamWriter(fs_data, Encoding.UTF8);      
+            w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
 
-         myShape.WriteFieldDefs();
+            // Write shapefile
+            myShape.Open(subDir+"run-"+fnstem+".shp", eShapeType.shpPoint);
+            
+            myShape.Fields.Add("Date", eFieldType.shpDate);
+            myShape.Fields.Add("Time", eFieldType.shpText);
+            myShape.Fields.Add("altitude", eFieldType.shpFloat);
+            myShape.Fields.Add("heart_rate", eFieldType.shpNumeric, 3, 0);
+            myShape.Fields.Add("distance", eFieldType.shpFloat);
+            myShape.Fields.Add("speed", eFieldType.shpFloat);
 
-         // write records
-         foreach (RecordMesg mesg in fitMessages.RecordMesgs) {
-            PrintRecordMesg(mesg,myShape,w_data);
+            myShape.WriteFieldDefs();
+
+            // write records
+            foreach (RecordMesg mesg in fitMessages.RecordMesgs) {
+               decodeRecordMesg(mesg,myShape,w_data);
+            }
          }
+         else
+         {
+            foreach (RecordMesg mesg in fitMessages.RecordMesgs) {
+               decodeRecordMesg(mesg,null,null);
+            }
 
+         }
          // write Avgs
          var end = System.DateTime.Parse(m_dates.Max() + " " + m_times.Max());
          var start = System.DateTime.Parse(m_dates.Min() + " " + m_times.Min());
@@ -137,7 +150,7 @@ public class GarminRunningDecode
          // finished
          Console.WriteLine("Decoded FIT file {0}", fn);
          Console.WriteLine();
-         w_data.Flush();
+         if(w_data != null) w_data.Flush();
          w_stats.Flush();
       }
       catch (FitException ex) {
@@ -167,7 +180,7 @@ public class GarminRunningDecode
       return false;
    }
 
-   private void PrintRecordMesg(RecordMesg mesg, ShapeFile shp, StreamWriter wo)
+   private void decodeRecordMesg(RecordMesg mesg, ShapeFile shp, StreamWriter wo)
    {
       System.DateTime timestamp;
       string date;
@@ -217,18 +230,20 @@ public class GarminRunningDecode
       else lon = 0;
 
       // write data to datafile
-      wo.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", date, time, lat, lon, altitude, distance, heart_rate, speed);
+      if(wo != null)
+         wo.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", date, time, lat, lon, altitude, distance, heart_rate, speed);
 
       // write data to shapefile
-      shp.Vertices.Add(lon, lat);
-      shp.Fields[0].Value = timestamp;
-      shp.Fields[1].Value = time;
-      shp.Fields[2].Value = altitude;
-      shp.Fields[3].Value = heart_rate;
-      shp.Fields[4].Value = distance;
-      shp.Fields[5].Value = speed;
-      shp.WriteShape();
-
+      if(shp != null) {
+         shp.Vertices.Add(lon, lat);
+         shp.Fields[0].Value = timestamp;
+         shp.Fields[1].Value = time;
+         shp.Fields[2].Value = altitude;
+         shp.Fields[3].Value = heart_rate;
+         shp.Fields[4].Value = distance;
+         shp.Fields[5].Value = speed;
+         shp.WriteShape();
+      }
       // collect data for stats
       m_speeds.Add(speed);
       m_heartbeats.Add(heart_rate);

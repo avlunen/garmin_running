@@ -12,7 +12,7 @@
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <StartArguments>/home/avl/data/src/garmin/activities</StartArguments>
+        <StartArguments>--file /home/avl/data/src/garmin/activities/2026-01-28-19-53-51.fit --s</StartArguments>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -23,6 +23,7 @@
 
     <ItemGroup>
       <PackageReference Include="Garmin.FIT.Sdk" Version="21.195.0" />
+      <PackageReference Include="System.CommandLine" Version="2.0.6" />
       <Reference Include="lib/ArcShapeFile.dll" />
     </ItemGroup>
 
