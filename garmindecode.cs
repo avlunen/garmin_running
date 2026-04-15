@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using ArcShapeFile;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 /**
 * Class to decode a Running Activity from a Garmin Fit file
@@ -109,7 +108,7 @@ public class GarminRunningDecode
          w_data = new StreamWriter(fs_data, Encoding.UTF8);
          w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
          w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
-         w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
+         w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(mins),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
 
          // Write shapefile
          myShape.Open(subDir+"run-"+fnstem+".shp", eShapeType.shpPoint);
@@ -129,8 +128,11 @@ public class GarminRunningDecode
          }
 
          // write Avgs
-         w_stats.WriteLine("{0},{1},{2},{3},{4},{5},{6}", m_dates.Min(), m_times.Min(), m_dates.Max(), m_times.Max(),
-            m_distances.Max(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
+         var end = System.DateTime.Parse(m_dates.Max() + " " + m_times.Max());
+         var start = System.DateTime.Parse(m_dates.Min() + " " + m_times.Min());
+         TimeSpan mins = end.Subtract(start);
+         w_stats.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", m_dates.Min(), m_times.Min(), m_dates.Max(), m_times.Max(),
+            mins.Minutes.ToString()+":"+mins.Seconds.ToString() , m_distances.Max(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
 
          // finished
          Console.WriteLine("Decoded FIT file {0}", fn);
@@ -189,28 +191,28 @@ public class GarminRunningDecode
       // decode record fields, setting respective field to zero if no record found
       // (this can happen, for instance, if a GPS connection has not been established,
       // but the run was commenced anyway)
-      o_ret = PrintFieldWithOverrides(mesg, RecordMesg.FieldDefNum.HeartRate);
+      o_ret = decodeField(mesg, RecordMesg.FieldDefNum.HeartRate);
       if(o_ret != null) heart_rate = (byte)o_ret;
       else heart_rate = 0;
 
-      o_ret = PrintFieldWithOverrides(mesg, RecordMesg.FieldDefNum.Distance);
+      o_ret = decodeField(mesg, RecordMesg.FieldDefNum.Distance);
       if(o_ret != null) distance = (float)o_ret;
       else distance = 0.0f;
 
-      // @todo altitude looks off, I think there is an offset to be added, need to check SDK docs
-      o_ret = PrintFieldWithOverrides(mesg, RecordMesg.FieldDefNum.EnhancedAltitude);
+      // TODO altitude looks off, I think there is an offset to be added, need to check SDK docs
+      o_ret = decodeField(mesg, RecordMesg.FieldDefNum.EnhancedAltitude);
       if(o_ret != null) altitude = (float)o_ret;
       else altitude = 0.0f;
 
-      o_ret = PrintFieldWithOverrides(mesg, RecordMesg.FieldDefNum.EnhancedSpeed);
+      o_ret = decodeField(mesg, RecordMesg.FieldDefNum.EnhancedSpeed);
       if(o_ret != null) speed = (float)o_ret;
       else speed = 0.0f;
 
-      o_ret = PrintFieldWithOverrides(mesg, RecordMesg.FieldDefNum.PositionLat);
+      o_ret = decodeField(mesg, RecordMesg.FieldDefNum.PositionLat);
       if (o_ret != null) lat = semicircles2degrees((int)o_ret);
       else lat = 0;
 
-      o_ret = PrintFieldWithOverrides(mesg, RecordMesg.FieldDefNum.PositionLong);
+      o_ret = decodeField(mesg, RecordMesg.FieldDefNum.PositionLong);
       if(o_ret != null) lon = semicircles2degrees((int)o_ret);
       else lon = 0;
 
@@ -235,7 +237,7 @@ public class GarminRunningDecode
       m_times.Add(time);
    }
 
-   private object PrintFieldWithOverrides(Mesg mesg, byte fieldNumber)
+   private object decodeField(Mesg mesg, byte fieldNumber)
    {
       Dynastream.Fit.Field profileField = Profile.GetField(mesg.Num, fieldNumber);
 
