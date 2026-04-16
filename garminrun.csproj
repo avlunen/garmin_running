@@ -5,6 +5,9 @@
         <TargetFramework>net8.0</TargetFramework>
         <RootNamespace>garminrun</RootNamespace>
         <AssemblyName>garminrun</AssemblyName>
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
@@ -16,7 +19,7 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-        <DebugType>pdbonly</DebugType>
+        <DebugType>embedded</DebugType>
         <Optimize>true</Optimize>
         <DefineConstants>TRACE</DefineConstants>
     </PropertyGroup>
