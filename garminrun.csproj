@@ -15,7 +15,7 @@
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <StartArguments>--file /home/avl/data/src/garmin/activities/2026-01-28-19-53-51.fit --s</StartArguments>
+        <StartArguments>--file /home/avl/data/src/garmin/activities/</StartArguments>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">

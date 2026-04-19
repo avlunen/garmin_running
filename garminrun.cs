@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Dynastream.Fit;
 using System.CommandLine;
-using System.CommandLine.Parsing;
+
 
 namespace GarminRun
 {
@@ -17,7 +17,7 @@ namespace GarminRun
                 Description = "Export stats only"
             };
 
-            string root = "Garmin G1 Running Data Export -- Protocol "+Fit.ProtocolMajorVersion.ToString()
+            string root = "Garmin G1 Running Data Export v 1.1 -- Protocol "+Fit.ProtocolMajorVersion.ToString()
                +"."+Fit.ProtocolMinorVersion.ToString()+", Profile "+Fit.ProfileMajorVersion.ToString()
                +"."+Fit.ProfileMinorVersion.ToString();
 
@@ -45,16 +45,23 @@ namespace GarminRun
                 DirectoryInfo dir = new DirectoryInfo(fn);
                 FileInfo[] files = dir.GetFiles("*.fit");
 
+                var progress = new ProgressBar();
+                int i = 1;
+
                 foreach (FileInfo file in files) {
-                    Console.WriteLine("Name: " + file.Name);
-                    dec.DecodeGarmin(fn, file.Name, statsMode);    
-                }                
+                    //Console.WriteLine("Name: " + file.Name);
+                    dec.DecodeGarmin(fn, file.Name, statsMode);
+                    double rate = (double) i++ / files.Length;
+                    progress.Report(rate);
+                    //Console.WriteLine("File {0} out of {1}, ({2}%)", i-1, files.Length, rate);
+                }
+                progress.Dispose();
             }
             else { // File
                 Console.WriteLine("Name: " + fn);
                 dec.DecodeGarmin("", fn, statsMode);
             }
-
+            Console.WriteLine("Finished!");
         }
     }
 }

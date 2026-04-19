@@ -20,6 +20,8 @@ using System.Linq;
 *   @version 0.9
 *   @since 15 Apr 2026
 *   @version 0.91
+*   @since 19 Apr 2026
+*   @version 0.92
 */
 public class GarminRunningDecode
 {
@@ -74,7 +76,7 @@ public class GarminRunningDecode
 
          // Attempt to open .FIT file
          fitSource = new FileStream(fitfilename, FileMode.Open);
-         Console.WriteLine("Opening {0}", fn);
+         //Console.WriteLine("Opening {0}", fn);
 
          Decode decoderGarmin = new Decode();
 
@@ -82,7 +84,7 @@ public class GarminRunningDecode
          FitListener fitListener = new FitListener();
          decoderGarmin.MesgEvent += fitListener.OnMesg;
 
-         Console.WriteLine("Decoding...");
+         //Console.WriteLine("Decoding...");
          decoderGarmin.Read(fitSource);
 
          FitMessages fitMessages = fitListener.FitMessages;
@@ -91,7 +93,7 @@ public class GarminRunningDecode
             ret = checkSportMesg(smesg);
 
          if(ret == false) {
-            Console.WriteLine("\tFile is not about running!\n");
+            //Console.WriteLine("\tFile is not about running!\n");
             return;
          }
 
@@ -133,8 +135,7 @@ public class GarminRunningDecode
                decodeRecordMesg(mesg,myShape,w_data);
             }
          }
-         else
-         {
+         else {
             foreach (RecordMesg mesg in fitMessages.RecordMesgs) {
                decodeRecordMesg(mesg,null,null);
             }
@@ -148,8 +149,8 @@ public class GarminRunningDecode
             mins.Minutes.ToString()+":"+mins.Seconds.ToString() , m_distances.Max(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
 
          // finished
-         Console.WriteLine("Decoded FIT file {0}", fn);
-         Console.WriteLine();
+         //Console.WriteLine("Decoded FIT file {0}", fn);
+         //Console.WriteLine();
          if(w_data != null) w_data.Flush();
          w_stats.Flush();
       }
