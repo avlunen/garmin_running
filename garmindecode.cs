@@ -35,6 +35,7 @@ public class GarminRunningDecode
    private List<string> m_times = new List<string>();
 
    private Sport m_activity = new Sport();
+   private SubSport m_subactivity = new SubSport();
 
 
    public Sport getActivity()
@@ -129,21 +130,30 @@ public class GarminRunningDecode
             w_data = new StreamWriter(fs_data, Encoding.UTF8);      
             w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
 
-            // Write shapefile
-            myShape.Open(subDir+"run-"+fnstem+".shp", eShapeType.shpPoint);
-            
-            myShape.Fields.Add("Date", eFieldType.shpDate);
-            myShape.Fields.Add("Time", eFieldType.shpText);
-            myShape.Fields.Add("altitude", eFieldType.shpFloat);
-            myShape.Fields.Add("heart_rate", eFieldType.shpNumeric, 3, 0);
-            myShape.Fields.Add("distance", eFieldType.shpFloat);
-            myShape.Fields.Add("speed", eFieldType.shpFloat);
+            if(m_subactivity.Equals(SubSport.Generic)) { // only write shapefile if outdoors
+               // Write shapefile
+               myShape.Open(subDir+"run-"+fnstem+".shp", eShapeType.shpPoint);
+               
+               myShape.Fields.Add("Date", eFieldType.shpDate);
+               myShape.Fields.Add("Time", eFieldType.shpText);
+               myShape.Fields.Add("altitude", eFieldType.shpFloat);
+               myShape.Fields.Add("heart_rate", eFieldType.shpNumeric, 3, 0);
+               myShape.Fields.Add("distance", eFieldType.shpFloat);
+               myShape.Fields.Add("speed", eFieldType.shpFloat);
 
-            myShape.WriteFieldDefs();
+               myShape.WriteFieldDefs();
 
-            // write records
-            foreach (RecordMesg mesg in fitMessages.RecordMesgs) {
-               decodeRecordMesg(mesg,myShape,w_data);
+               // write records
+               foreach (RecordMesg mesg in fitMessages.RecordMesgs) {
+                  decodeRecordMesg(mesg,myShape,w_data);
+               }
+
+            }
+            else {
+               // write records
+               foreach (RecordMesg mesg in fitMessages.RecordMesgs) {
+                  decodeRecordMesg(mesg,null,w_data);
+               }               
             }
          }
          else {
@@ -189,6 +199,7 @@ public class GarminRunningDecode
       SubSport? ssp = mesg.GetSubSport();
 
       if (sp != null) m_activity = (Sport)sp;
+      if(ssp != null) m_subactivity = (SubSport)ssp;
 
       if(sp.Equals(Sport.Running)) return true;
 

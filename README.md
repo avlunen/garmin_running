@@ -1,6 +1,6 @@
-This is a simple commandline app written in C# to read running data from Garmin Fit files; and <b>only</b> running activities &mdash; any other activity will be ignored.
+This is a simple commandline app written in C# to read running data from Garmin Fit files; and <b>only</b> running activities &mdash; any other activity will be ignored. Any running activity should be handled, such as outdoor run or treadmill.
 
-It writes out an ESRI Shapefile (to be used with a GIS program, such as <a href="https://www.qgis.org">QGIS</a>) with the running track, a CSV file (can be opened in a spreadsheet app) with all the data points listed, and a CSV file with aggregated stats (such as average speed or heart rate).
+It writes out an ESRI Shapefile (to be used with a GIS program, such as <a href="https://www.qgis.org">QGIS</a>) with the running track unless it is an indoor run (e.g., treadmill), a CSV file (can be opened in a spreadsheet app) with all the data points listed, and a CSV file with aggregated stats (such as average speed or heart rate).
 
 To run: <tt>./garminrun -h</tt>: will give you hints on what parameters are accetable.
 
