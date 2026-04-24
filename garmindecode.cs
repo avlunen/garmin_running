@@ -11,6 +11,7 @@ using System.Linq;
 * Creates:
 *   1) an ESRI shapefile with the running tracks (as your Garmin device recorded it)
 *   2) a CSV file with the data from 1) tabulated
+*   3) a CSV file with aggregated statistics
 *
 *   These files are written into a sub-folder 'output', which will be created if it
 *   does not exist.
@@ -22,6 +23,8 @@ using System.Linq;
 *   @version 0.91
 *   @since 19 Apr 2026
 *   @version 0.92
+*   @since 24 Apr 2026
+*   @version 0.95
 */
 public class GarminRunningDecode
 {
@@ -30,6 +33,14 @@ public class GarminRunningDecode
    private List<float> m_distances = new List<float>();
    private List<string> m_dates = new List<string>();
    private List<string> m_times = new List<string>();
+
+   private Sport m_activity = new Sport();
+
+
+   public Sport getActivity()
+   {
+      return m_activity;
+   }
 
    public double AvgSpeeds()
    {
@@ -174,9 +185,12 @@ public class GarminRunningDecode
 
    private bool checkSportMesg(SportMesg mesg)
    {
-      string field1 = mesg.GetSport().ToString();
+      Sport? sp = mesg.GetSport();
+      SubSport? ssp = mesg.GetSubSport();
 
-      if(field1 == "Running") return true;
+      if (sp != null) m_activity = (Sport)sp;
+
+      if(sp.Equals(Sport.Running)) return true;
 
       return false;
    }

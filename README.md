@@ -21,4 +21,4 @@ The app does not connect to the Garmin device as such. Rather, it reads Fit file
 
 This will need some more testing (only have the Garmin Descent G1) and fine tuning.
 
-Uses the Garmin Fit SDK (from NuGet), System.CommandLine (also from NuGet) and <a href="https://github.com/rosspickard/ArcShapeFile/tree/master">ArcShapeFile</a> (included in this project).
+Uses the Garmin Fit SDK (from NuGet), System.CommandLine (also from NuGet), <a href="https://github.com/rosspickard/ArcShapeFile/tree/master">ArcShapeFile</a> and Daniel Wolf's <a href="https://gist.github.com/DanielSWolf/0ab6a96899cc5377bf54">Progress Bar</a> (the latter two are included in this project).
