@@ -25,6 +25,8 @@ using System.Linq;
 *   @version 0.92
 *   @since 24 Apr 2026
 *   @version 0.95
+*   @since 29 Apr 2026
+*   @version 0.96
 */
 public class GarminRunningDecode
 {
@@ -105,7 +107,7 @@ public class GarminRunningDecode
             ret = checkSportMesg(smesg);
 
          if(ret == false) {
-            //Console.WriteLine("\tFile is not about running!\n");
+            Console.WriteLine("\tFile {0} is not a recognized activity!\n", fn);
             return;
          }
 
@@ -201,7 +203,7 @@ public class GarminRunningDecode
       if (sp != null) m_activity = (Sport)sp;
       if(ssp != null) m_subactivity = (SubSport)ssp;
 
-      if(sp.Equals(Sport.Running)) return true;
+      if(sp.Equals(Sport.Running) || sp.Equals(Sport.Cycling)) return true;
 
       return false;
    }
