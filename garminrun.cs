@@ -6,7 +6,7 @@ using System.CommandLine;
 
 namespace GarminRun
 {
-    class Program
+    static class Program
     {
         static int Main(string[] args)
         {
@@ -58,7 +58,7 @@ namespace GarminRun
                 progress.Dispose();
             }
             else { // File
-                Console.WriteLine("Name: " + fn);
+                //Console.WriteLine("Name: " + fn);
                 dec.DecodeGarmin("", fn, statsMode);
             }
             Console.WriteLine("Finished!");
