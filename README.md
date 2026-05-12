@@ -1,6 +1,6 @@
 This is a simple commandline app written in C# to read running data from Garmin Fit files; and <b>only</b> running activities &mdash; any other activity will be ignored. Any running activity should be handled, such as outdoor run or treadmill.
 
-It writes out an ESRI Shapefile (to be used with a GIS program, such as <a href="https://www.qgis.org">QGIS</a>) with the running track unless it is an indoor run (e.g., treadmill), a CSV file (can be opened in a spreadsheet app) with all the data points listed, and a CSV file with aggregated stats (such as average speed or heart rate).
+It writes out an ESRI Shapefile (to be used with a GIS program, such as <a href="https://www.qgis.org">QGIS</a>) with the running track unless it is an indoor run (e.g., treadmill), a CSV file (can be opened in a spreadsheet app) with all the data points listed, and a CSV file with aggregated stats (such as average speed or heart rate). It will also create a PNG file with a chart of the recorded heart 
 
 To run: <tt>./garminrun -h</tt>: will give you hints on what parameters are accetable.
 
@@ -21,4 +21,4 @@ The app does not connect to the Garmin device as such. Rather, it reads Fit file
 
 This will need some more testing (only have the Garmin Descent G1) and fine tuning.
 
-Uses the Garmin Fit SDK (from NuGet), System.CommandLine (also from NuGet), <a href="https://github.com/rosspickard/ArcShapeFile/tree/master">ArcShapeFile</a> and Daniel Wolf's <a href="https://gist.github.com/DanielSWolf/0ab6a96899cc5377bf54">Progress Bar</a> (the latter two are included in this project).
+Uses the Garmin Fit SDK (from NuGet), System.CommandLine (also from NuGet), ScottPlot (also NuGet), <a href="https://github.com/rosspickard/ArcShapeFile/tree/master">ArcShapeFile</a> and Daniel Wolf's <a href="https://gist.github.com/DanielSWolf/0ab6a96899cc5377bf54">Progress Bar</a> (the latter two are included in this project).
