@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
 using ArcShapeFile;
 using Dynastream.Fit;
+using ScottPlot;
 
 namespace GarminRun
 {
@@ -16,6 +18,7 @@ namespace GarminRun
     *   1) an ESRI shapefile with the running tracks (as your Garmin device recorded it)
     *   2) a CSV file with the data from 1) tabulated
     *   3) a CSV file with aggregated statistics
+    *   4) a chart with the heart rate plotted over the excercise time
     *
     *   These files are written into a sub-folder 'output', which will be created if it
     *   does not exist.
@@ -31,6 +34,8 @@ namespace GarminRun
     *   @version 0.95
     *   @since 29 Apr 2026
     *   @version 0.96
+    *   @since 12 May 2026
+    *   @version 1.0
 */
     public class GarminRunningDecode
     {
@@ -39,6 +44,7 @@ namespace GarminRun
         private List<float> m_distances = new List<float>();
         private List<string> m_dates = new List<string>();
         private List<string> m_times = new List<string>();
+        private List<System.DateTime> m_timestamps = new List<System.DateTime>();
 
         private Sport m_activity = new Sport();
         private SubSport m_subactivity = new SubSport();
@@ -71,6 +77,46 @@ namespace GarminRun
             return (int)(degrees * (2147483648.0 / 180.0));
         }
 
+        private void CreateHRChart(string fn)
+        {
+            ScottPlot.TickGenerators.NumericManual ticks = new();
+            ScottPlot.Plot myPlot = new();
+            var dataY = m_heartbeats.ToArray();
+            List<long> dataXL = new List<long>();
+            var endDate = m_timestamps.Max();
+            var startDate = m_timestamps.Min();
+            System.TimeSpan span = endDate - startDate;
+
+            foreach(System.DateTime dat in m_timestamps)
+            {
+                System.TimeSpan tmp = dat - startDate;
+                long dats = (tmp.Minutes * 60) + tmp.Seconds;
+                dataXL.Add(dats);
+
+                if (dats % 60 == 0)
+                {
+                    ticks.AddMajor(dats, $"{dats/60}");
+                }
+                else if(dats % 30 == 0)
+                {
+                    ticks.AddMinor(dats);
+                }
+            }
+
+            var sp = myPlot.Add.Scatter(dataXL.ToArray(), dataY);
+            //myPlot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericFixedInterval(60);
+            myPlot.Title("Heart Rate");
+            myPlot.XLabel("Minutes");
+            myPlot.YLabel("BPM");
+            myPlot.Axes.SetLimitsX(0, (span.Minutes * 60) + span.Seconds + 10);
+            myPlot.Axes.SetLimitsY(m_heartbeats.Min()-5, m_heartbeats.Max()+5);
+            myPlot.Axes.Bottom.TickGenerator = ticks;
+            sp.FillY = true;
+            sp.FillYColor = sp.Color.WithAlpha(.2);
+
+            myPlot.SavePng(fn, 2560, 1024);
+        }
+
         public void DecodeGarmin(string dir, string fn, bool statsOnly = false)
         {
             ShapeFile myShape = new ShapeFile();
@@ -82,16 +128,16 @@ namespace GarminRun
             bool ret = false;
             string fitfilename = dir;
             string fnstem = "";
-            string subDir = "./output/";
+            const string subDir = "./output/";
             DirectoryInfo di;
 
             try
             {
-                if (!dir.EndsWith("/") && dir != "") fitfilename += "/";
+                if (!dir.EndsWith('/') && dir != "") fitfilename += "/";
                 fitfilename += fn;
 
                 // Assumes that filenames end in ".fit"
-                int pos = fn.LastIndexOf("/");
+                int pos = fn.LastIndexOf('/');
                 if (pos == -1) pos = 0;
                 fnstem = fn.Substring(pos + 1, fn.Length - (pos + 5));
 
@@ -139,14 +185,12 @@ namespace GarminRun
                 w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
                 w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(mins),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
 
-                if (statsOnly == false)
-                {
+                if (statsOnly == false)  {
                     fs_data = new FileStream(subDir + "run-" + fnstem + ".csv", FileMode.Create);
                     w_data = new StreamWriter(fs_data, Encoding.UTF8);
                     w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
 
-                    if (m_subactivity.Equals(SubSport.Generic))
-                    { // only write shapefile if outdoors
+                    if (m_subactivity.Equals(SubSport.Generic)) { // only write shapefile if outdoors
                       // Write shapefile
                         myShape.Open(subDir + "run-" + fnstem + ".shp", eShapeType.shpPoint);
 
@@ -164,7 +208,8 @@ namespace GarminRun
                         {
                             decodeRecordMesg(mesg, myShape, w_data);
                         }
-
+                        // create HR chart
+                        CreateHRChart(subDir + "run-" + fnstem + ".png");
                     }
                     else
                     {
@@ -173,6 +218,9 @@ namespace GarminRun
                         {
                             decodeRecordMesg(mesg, null, w_data);
                         }
+                        // create HR chart
+                        CreateHRChart(subDir + "run-" + fnstem + ".png");
+
                     }
                 }
                 else
@@ -251,8 +299,10 @@ namespace GarminRun
                 date = timestamp.ToShortDateString();
                 time = timestamp.ToLongTimeString();
             }
-            else return;
-
+            else
+            {
+                return;
+            }
             // decode record fields, setting respective field to zero if no record found
             // (this can happen, for instance, if a GPS connection has not been established,
             // but the run was commenced anyway)
@@ -302,6 +352,7 @@ namespace GarminRun
             m_distances.Add(distance);
             m_dates.Add(date);
             m_times.Add(time);
+            m_timestamps.Add(timestamp);
         }
 
         private object decodeField(Mesg mesg, byte fieldNumber)
