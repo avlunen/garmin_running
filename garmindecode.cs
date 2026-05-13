@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using ArcShapeFile;
 using Dynastream.Fit;
+using garminrun;
 using ScottPlot;
 
 namespace GarminRun
@@ -104,7 +105,7 @@ namespace GarminRun
             }
 
             var sp = myPlot.Add.Scatter(dataXL.ToArray(), dataY);
-            //myPlot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericFixedInterval(60);
+
             myPlot.Title("Heart Rate");
             myPlot.XLabel("Minutes");
             myPlot.YLabel("BPM");
@@ -117,9 +118,10 @@ namespace GarminRun
             myPlot.SavePng(fn, 2560, 1024);
         }
 
-        public void DecodeGarmin(string dir, string fn, bool statsOnly = false)
+        public void DecodeGarmin(string dir, string fn, bool statsOnly = false, bool shpexp = false, bool kmlexp = false)
         {
-            ShapeFile myShape = new ShapeFile();
+            ShapeFile myShape = null;
+            ExportKML myKML = null;
             FileStream fitSource = null;
             FileStream fs_data = null;
             FileStream fs_stats = null;
@@ -185,52 +187,63 @@ namespace GarminRun
                 w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
                 w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(mins),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
 
-                if (statsOnly == false)  {
+                if (statsOnly)  {
+                    foreach (RecordMesg mesg in fitMessages.RecordMesgs)
+                    {
+                        decodeRecordMesg(mesg, null, null, null);
+                    }
+                }
+                else  {
                     fs_data = new FileStream(subDir + "run-" + fnstem + ".csv", FileMode.Create);
                     w_data = new StreamWriter(fs_data, Encoding.UTF8);
                     w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
 
-                    if (m_subactivity.Equals(SubSport.Generic)) { // only write shapefile if outdoors
-                      // Write shapefile
-                        myShape.Open(subDir + "run-" + fnstem + ".shp", eShapeType.shpPoint);
+                    if (m_subactivity.Equals(SubSport.Generic))
+                    { // only write shapefile if outdoors
+                        if (shpexp)
+                        {
+                            myShape = new ShapeFile();
+                            // Write shapefile
+                            myShape.Open(subDir + "run-" + fnstem + ".shp", eShapeType.shpPoint);
 
-                        myShape.Fields.Add("Date", eFieldType.shpDate);
-                        myShape.Fields.Add("Time", eFieldType.shpText);
-                        myShape.Fields.Add("altitude", eFieldType.shpFloat);
-                        myShape.Fields.Add("heart_rate", eFieldType.shpNumeric, 3, 0);
-                        myShape.Fields.Add("distance", eFieldType.shpFloat);
-                        myShape.Fields.Add("speed", eFieldType.shpFloat);
+                            myShape.Fields.Add("Date", eFieldType.shpDate);
+                            myShape.Fields.Add("Time", eFieldType.shpText);
+                            myShape.Fields.Add("altitude", eFieldType.shpFloat);
+                            myShape.Fields.Add("heart_rate", eFieldType.shpNumeric, 3, 0);
+                            myShape.Fields.Add("distance", eFieldType.shpFloat);
+                            myShape.Fields.Add("speed", eFieldType.shpFloat);
 
-                        myShape.WriteFieldDefs();
+                            myShape.WriteFieldDefs();
+                        }
 
+                        if(kmlexp)
+                        {
+                            myKML = new ExportKML();
+                        }
                         // write records
                         foreach (RecordMesg mesg in fitMessages.RecordMesgs)
                         {
-                            decodeRecordMesg(mesg, myShape, w_data);
+                            decodeRecordMesg(mesg, myShape, myKML, w_data);
                         }
+
+                        myKML?.export(subDir + "run-" + fnstem + ".kml");
+
                         // create HR chart
                         CreateHRChart(subDir + "run-" + fnstem + ".png");
                     }
-                    else
+                    else // no GPS data
                     {
                         // write records
                         foreach (RecordMesg mesg in fitMessages.RecordMesgs)
                         {
-                            decodeRecordMesg(mesg, null, w_data);
+                            decodeRecordMesg(mesg, null, null, w_data);
                         }
                         // create HR chart
                         CreateHRChart(subDir + "run-" + fnstem + ".png");
 
                     }
                 }
-                else
-                {
-                    foreach (RecordMesg mesg in fitMessages.RecordMesgs)
-                    {
-                        decodeRecordMesg(mesg, null, null);
-                    }
 
-                }
                 // write Avgs
                 var end = System.DateTime.Parse(m_dates.Max() + " " + m_times.Max());
                 var start = System.DateTime.Parse(m_dates.Min() + " " + m_times.Min());
@@ -279,7 +292,7 @@ namespace GarminRun
             return false;
         }
 
-        private void decodeRecordMesg(RecordMesg mesg, ShapeFile shp, StreamWriter wo)
+        private void decodeRecordMesg(RecordMesg mesg, ShapeFile shp, ExportKML kml, StreamWriter wo)
         {
             System.DateTime timestamp;
             string date;
@@ -346,6 +359,9 @@ namespace GarminRun
                 shp.Fields[5].Value = speed;
                 shp.WriteShape();
             }
+
+            kml?.AddPoint(timestamp.ToString(), lat, lon);
+
             // collect data for stats
             m_speeds.Add(speed);
             m_heartbeats.Add(heart_rate);
