@@ -4,10 +4,10 @@ using System.Collections.ObjectModel;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
-using ArcShapeFile;
+
 using Dynastream.Fit;
-using garminrun;
 using ScottPlot;
 
 namespace GarminRun
@@ -40,15 +40,18 @@ namespace GarminRun
 */
     public class GarminRunningDecode
     {
-        private List<float> m_speeds = new List<float>();
-        private List<byte> m_heartbeats = new List<byte>();
-        private List<float> m_distances = new List<float>();
-        private List<string> m_dates = new List<string>();
-        private List<string> m_times = new List<string>();
-        private List<System.DateTime> m_timestamps = new List<System.DateTime>();
+        private List<float> m_speeds = [];
+        private List<byte> m_heartbeats = [];
+        private List<float> m_distances = [];
+        private List<string> m_dates = [];
+        private List<string> m_times = [];
+        private List<System.DateTime> m_timestamps = [];
 
-        private Sport m_activity = new Sport();
-        private SubSport m_subactivity = new SubSport();
+        private List<MyFields> m_fields = [];
+        private List<Vector2> m_pts = [];
+
+        private Sport m_activity = new();
+        private SubSport m_subactivity = new();
         private UInt32 m_serial_no;
         private Single m_firmware;
 
@@ -120,8 +123,7 @@ namespace GarminRun
 
         public void DecodeGarmin(string dir, string fn, bool statsOnly = false, bool shpexp = false, bool kmlexp = false)
         {
-            ShapeFile myShape = null;
-            ExportKML myKML = null;
+            MyLine line = new();
             FileStream fitSource = null;
             FileStream fs_data = null;
             FileStream fs_stats = null;
@@ -147,10 +149,10 @@ namespace GarminRun
                 fitSource = new FileStream(fitfilename, FileMode.Open);
                 //Console.WriteLine("Opening {0}", fn);
 
-                Decode decoderGarmin = new Decode();
+                Decode decoderGarmin = new();
 
                 // Use a FitListener to capture all decoded messages in a FitMessages object
-                FitListener fitListener = new FitListener();
+                FitListener fitListener = new();
                 decoderGarmin.MesgEvent += fitListener.OnMesg;
 
                 //Console.WriteLine("Decoding...");
@@ -165,7 +167,7 @@ namespace GarminRun
                 foreach (SportMesg smesg in fitMessages.SportMesgs)
                     ret = checkSportMesg(smesg);
 
-                if (ret == false)
+                if (!ret)
                 {
                     Console.WriteLine("\tFile {0} is not a recognized activity!\n", fn);
                     return;
@@ -177,6 +179,7 @@ namespace GarminRun
                 m_speeds.Clear();
                 m_dates.Clear();
                 m_times.Clear();
+                m_timestamps.Clear();
 
                 // create sub-directory, if it not exists
                 if (!Directory.Exists(subDir))
@@ -187,61 +190,10 @@ namespace GarminRun
                 w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
                 w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(mins),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
 
-                if (statsOnly)  {
-                    foreach (RecordMesg mesg in fitMessages.RecordMesgs)
-                    {
-                        decodeRecordMesg(mesg, null, null, null);
-                    }
-                }
-                else  {
-                    fs_data = new FileStream(subDir + "run-" + fnstem + ".csv", FileMode.Create);
-                    w_data = new StreamWriter(fs_data, Encoding.UTF8);
-                    w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
-
-                    if (m_subactivity.Equals(SubSport.Generic))
-                    { // only write shapefile if outdoors
-                        if (shpexp)
-                        {
-                            myShape = new ShapeFile();
-                            // Write shapefile
-                            myShape.Open(subDir + "run-" + fnstem + ".shp", eShapeType.shpPoint);
-
-                            myShape.Fields.Add("Date", eFieldType.shpDate);
-                            myShape.Fields.Add("Time", eFieldType.shpText);
-                            myShape.Fields.Add("altitude", eFieldType.shpFloat);
-                            myShape.Fields.Add("heart_rate", eFieldType.shpNumeric, 3, 0);
-                            myShape.Fields.Add("distance", eFieldType.shpFloat);
-                            myShape.Fields.Add("speed", eFieldType.shpFloat);
-
-                            myShape.WriteFieldDefs();
-                        }
-
-                        if(kmlexp)
-                        {
-                            myKML = new ExportKML();
-                        }
-                        // write records
-                        foreach (RecordMesg mesg in fitMessages.RecordMesgs)
-                        {
-                            decodeRecordMesg(mesg, myShape, myKML, w_data);
-                        }
-
-                        myKML?.export(subDir + "run-" + fnstem + ".kml");
-
-                        // create HR chart
-                        CreateHRChart(subDir + "run-" + fnstem + ".png");
-                    }
-                    else // no GPS data
-                    {
-                        // write records
-                        foreach (RecordMesg mesg in fitMessages.RecordMesgs)
-                        {
-                            decodeRecordMesg(mesg, null, null, w_data);
-                        }
-                        // create HR chart
-                        CreateHRChart(subDir + "run-" + fnstem + ".png");
-
-                    }
+                // decode Garmin data
+                foreach (RecordMesg mesg in fitMessages.RecordMesgs)
+                {
+                    decodeRecordMesg(mesg);
                 }
 
                 // write Avgs
@@ -249,11 +201,70 @@ namespace GarminRun
                 var start = System.DateTime.Parse(m_dates.Min() + " " + m_times.Min());
                 TimeSpan mins = end.Subtract(start);
                 w_stats.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", m_dates.Min(), m_times.Min(), m_dates.Max(), m_times.Max(),
-                   mins.Minutes.ToString() + ":" + mins.Seconds.ToString(), m_distances.Max(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
+                    mins.Minutes.ToString() + ":" + mins.Seconds.ToString(), m_distances.Max(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
 
+                // write data
+                if (!statsOnly)
+                {
+                    // write raw data
+                    fs_data = new FileStream(subDir + "run-" + fnstem + ".csv", FileMode.Create);
+                    w_data = new StreamWriter(fs_data, Encoding.UTF8);
+                    w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
+
+                    var ptsAndfieldfs = m_pts.Zip(m_fields, (n, w) => new { pos = n, fld = w });
+                    foreach (var nw in ptsAndfieldfs)
+                    {
+                        w_data.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", nw.fld.Mdate, nw.fld.Mtime, nw.pos.Y, nw.pos.X,
+                            nw.fld.Malt, nw.fld.Mdist, nw.fld.Mhr, nw.fld.Mspeed);
+                    }
+
+                    // create HR chart
+                    CreateHRChart(subDir + "run-" + fnstem + ".png");
+
+                    // write geo files    
+                    if (m_subactivity.Equals(SubSport.Generic))
+                    { // only write shapefile if outdoors
+                        // create line segments
+                        Vector2 prev_pt = Vector2.Zero;
+                        MyFields prev_fld = new();
+
+                        foreach (var nw in ptsAndfieldfs)
+                        {
+                            if (prev_pt != Vector2.Zero)
+                            {
+                                MyFields fl = new()
+                                {
+                                    Malt = (prev_fld.Malt + nw.fld.Malt) / 2,
+                                    Mtimestamp = nw.fld.Mtimestamp,
+                                    Mdate = nw.fld.Mdate,
+                                    Mtime = nw.fld.Mtime,
+                                    Mhr = (byte)((prev_fld.Mhr + nw.fld.Mhr) / 2),
+                                    Mspeed = (prev_fld.Mspeed + nw.fld.Mspeed) / 2,
+                                    Mdist = nw.fld.Mdist - prev_fld.Mdist
+                                };
+                                line.AddSegment(prev_pt, nw.pos, fl);
+                            }
+                            prev_pt = nw.pos;
+                            prev_fld = nw.fld;
+                        }
+
+                        if (shpexp)
+                        {
+                            ExportShp.Export(subDir + "run-" + fnstem + ".shp", line);
+                        }
+
+                        if (kmlexp)
+                        {
+                            ExportKML myKML = new();
+
+                            foreach (MyLineSegment mls in line.GetSegs())
+                                myKML.AddLine(mls);
+
+                            myKML.Export(subDir + "run-" + fnstem + ".kml");
+                        }
+                    }
+                }
                 // finished
-                //Console.WriteLine("Decoded FIT file {0}", fn);
-                //Console.WriteLine();
                 w_data?.Flush();
                 w_stats?.Flush();
             }
@@ -268,15 +279,14 @@ namespace GarminRun
             catch (Exception ex)
             {
                 Console.WriteLine("Exception occurred when trying to decode the FIT file. Message: " + ex.Message);
+                Console.WriteLine(ex.StackTrace);
             }
             finally
             {
                 fitSource?.Close();
                 fs_data?.Close();
                 fs_stats?.Close();
-                myShape?.Close();
             }
-
         }
 
         private bool checkSportMesg(SportMesg mesg)
@@ -287,30 +297,22 @@ namespace GarminRun
             if (sp != null) m_activity = (Sport)sp;
             if (ssp != null) m_subactivity = (SubSport)ssp;
 
-            if (sp.Equals(Sport.Running) || sp.Equals(Sport.Cycling)) return true;
-
-            return false;
+            return sp.Equals(Sport.Running) || sp.Equals(Sport.Cycling);
         }
 
-        private void decodeRecordMesg(RecordMesg mesg, ShapeFile shp, ExportKML kml, StreamWriter wo)
+        private void decodeRecordMesg(RecordMesg mesg)
         {
-            System.DateTime timestamp;
-            string date;
-            string time;
+            MyFields field = new();
             double lat;
             double lon;
-            byte heart_rate;
-            float distance;
-            float altitude;
-            float speed;
             object o_ret;
 
 
             if (mesg.GetTimestamp() != null)
             {
-                timestamp = System.DateTime.Parse(mesg.GetTimestamp().ToString());
-                date = timestamp.ToShortDateString();
-                time = timestamp.ToLongTimeString();
+                field.Mtimestamp = System.DateTime.Parse(mesg.GetTimestamp().ToString());
+                field.Mdate = field.Mtimestamp.ToShortDateString();
+                field.Mtime = field.Mtimestamp.ToLongTimeString();
             }
             else
             {
@@ -320,21 +322,21 @@ namespace GarminRun
             // (this can happen, for instance, if a GPS connection has not been established,
             // but the run was commenced anyway)
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.HeartRate);
-            if (o_ret != null) heart_rate = (byte)o_ret;
-            else heart_rate = 0;
+            if (o_ret != null) field.Mhr = (byte)o_ret;
+            else field.Mhr = 0;
 
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.Distance);
-            if (o_ret != null) distance = (float)o_ret;
-            else distance = 0.0f;
+            if (o_ret != null) field.Mdist = (float)o_ret;
+            else field.Mdist = 0.0f;
 
             // TODO altitude looks off, I think there is an offset to be added, need to check SDK docs
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.EnhancedAltitude);
-            if (o_ret != null) altitude = (float)o_ret;
-            else altitude = 0.0f;
+            if (o_ret != null) field.Malt = (float)o_ret;
+            else field.Malt = 0.0f;
 
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.EnhancedSpeed);
-            if (o_ret != null) speed = (float)o_ret;
-            else speed = 0.0f;
+            if (o_ret != null) field.Mspeed = (float)o_ret;
+            else field.Mspeed = 0.0f;
 
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.PositionLat);
             if (o_ret != null) lat = semicircles2degrees((int)o_ret);
@@ -344,31 +346,16 @@ namespace GarminRun
             if (o_ret != null) lon = semicircles2degrees((int)o_ret);
             else lon = 0;
 
-            // write data to datafile
-            wo?.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", date, time, lat, lon, altitude, distance, heart_rate, speed);
-
-            // write data to shapefile
-            if (shp != null)
-            {
-                shp.Vertices.Add(lon, lat);
-                shp.Fields[0].Value = timestamp;
-                shp.Fields[1].Value = time;
-                shp.Fields[2].Value = altitude;
-                shp.Fields[3].Value = heart_rate;
-                shp.Fields[4].Value = distance;
-                shp.Fields[5].Value = speed;
-                shp.WriteShape();
-            }
-
-            kml?.AddPoint(timestamp.ToString(), lat, lon);
+            m_fields.Add(field);
+            m_pts.Add(new Vector2((float)lon, (float)lat));
 
             // collect data for stats
-            m_speeds.Add(speed);
-            m_heartbeats.Add(heart_rate);
-            m_distances.Add(distance);
-            m_dates.Add(date);
-            m_times.Add(time);
-            m_timestamps.Add(timestamp);
+            m_speeds.Add(field.Mspeed);
+            m_heartbeats.Add(field.Mhr);
+            m_distances.Add(field.Mdist);
+            m_dates.Add(field.Mdate);
+            m_times.Add(field.Mtime);
+            m_timestamps.Add(field.Mtimestamp);
         }
 
         private object decodeField(Mesg mesg, byte fieldNumber)
