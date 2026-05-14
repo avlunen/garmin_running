@@ -11,6 +11,8 @@ using System.CommandLine;
 *   @since 14 May 2026
 *   @version 1.45
 *   @since 14 May 2026
+*   @version 1.45.1
+*   @since 14 May 2026
 */
 
 namespace GarminRun
@@ -21,7 +23,8 @@ namespace GarminRun
         {
             Option<string> fileOption = new("--file")
             {
-                Description = "The file to read."
+                Description = "The file to read.",
+                Required = true
             };
             Option<bool> statsOption = new("--s")
             {
@@ -44,7 +47,7 @@ namespace GarminRun
                 Description = "Export track as GPX"
             };
 
-            string root = "Garmin G1 Running Data Export v 1.45 -- Protocol " + Fit.ProtocolMajorVersion.ToString()
+            string root = "Garmin G1 Running Data Export v 1.45.1 -- Protocol " + Fit.ProtocolMajorVersion.ToString()
                + "." + Fit.ProtocolMinorVersion.ToString() + ", Profile " + Fit.ProfileMajorVersion.ToString()
                + "." + Fit.ProfileMinorVersion.ToString();
 
