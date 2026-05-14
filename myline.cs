@@ -24,18 +24,5 @@ namespace GarminRun
         {
             return m_pts.Count;
         }
-/*
-        public LineString AsKMLLineString()
-        {
-            LineString linestring = new();
-            CoordinateCollection coordinates = new CoordinateCollection();
-
-            foreach (Vector2 pt in m_pts)
-                coordinates.Add(new SharpKml.Base.Vector(pt.Y, pt.X));
-            linestring.Coordinates = coordinates;
-
-            return linestring;
-        }
-*/
     }
 }

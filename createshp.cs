@@ -1,6 +1,13 @@
 using ArcShapeFile;
 using System.Collections.Generic;
 
+/**
+*   Class to export line segments to Shape file
+*
+*   @author Alexander von L&uuml;nen
+*   @version 1.0
+*   @since 13 May 2026
+*/
 namespace GarminRun
 {
     static class ExportShp

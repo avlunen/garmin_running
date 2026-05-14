@@ -37,6 +37,8 @@ namespace GarminRun
     *   @version 0.96
     *   @since 12 May 2026
     *   @version 1.0
+    *   @since 13 May 2026
+    *   @version 1.1
 */
     public class GarminRunningDecode
     {
@@ -121,7 +123,7 @@ namespace GarminRun
             myPlot.SavePng(fn, 2560, 1024);
         }
 
-        public void DecodeGarmin(string dir, string fn, bool statsOnly = false, bool shpexp = false, bool kmlexp = false)
+        public void DecodeGarmin(string dir, string fn, bool statsOnly = false, bool shpexp = false, bool kmlexp = false, bool hrexp = false)
         {
             MyLine line = new();
             FileStream fitSource = null;
@@ -185,7 +187,7 @@ namespace GarminRun
                 if (!Directory.Exists(subDir))
                     di = Directory.CreateDirectory(subDir);
 
-                // write data files
+                // write avg. data file
                 fs_stats = new FileStream(subDir + "run-" + fnstem + "_stats.csv", FileMode.Create);
                 w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
                 w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(mins),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
@@ -219,11 +221,12 @@ namespace GarminRun
                     }
 
                     // create HR chart
-                    CreateHRChart(subDir + "run-" + fnstem + ".png");
+                    if(hrexp)
+                        CreateHRChart(subDir + "run-" + fnstem + ".png");
 
                     // write geo files    
-                    if (m_subactivity.Equals(SubSport.Generic))
-                    { // only write shapefile if outdoors
+                    if (m_subactivity.Equals(SubSport.Generic)) // only write shapefile if outdoors; TODO needs better check
+                    {
                         // create line segments
                         Vector2 prev_pt = Vector2.Zero;
                         MyFields prev_fld = new();
@@ -249,9 +252,7 @@ namespace GarminRun
                         }
 
                         if (shpexp)
-                        {
                             ExportShp.Export(subDir + "run-" + fnstem + ".shp", line);
-                        }
 
                         if (kmlexp)
                         {

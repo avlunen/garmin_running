@@ -8,10 +8,18 @@ using System.IO;
 using System.Text;
 using static System.Text.Encoding;
 
+/**
+*   Class to export geo data to KML file
+*
+*    @author Alexander von L&uml:nen
+*    @version 1.0
+*    @since 13 May 2026
+*/
 namespace GarminRun
 {
     class ExportKML
     {
+        // Colour values to map heart rates against
         readonly private static Dictionary<int, string> coldict = new()
         {
             {1, "#ff376800"},
@@ -30,6 +38,16 @@ namespace GarminRun
 
         private Document m_document = new Document();
 
+        /**
+        * Mapping from 60 to 180 (heart rate)
+        */
+        private static int MapValue(int a)
+        {
+            int b = (int)(1 + (11 * ((a - 60.0) / 120.0)));
+
+            return b;
+        }
+
         public ExportKML()
         {
             for (int i = 1; i < 13; i++)
@@ -42,7 +60,7 @@ namespace GarminRun
 
                 Style runStyle = new()
                 {
-                    Id = "RunStyle"+i,
+                    Id = "RunStyle" + i,
                     Line = lineStyle
                 };
 
@@ -102,7 +120,7 @@ namespace GarminRun
                 Name = line.m_fields.Mtimestamp.ToString(),
                 Geometry = linea,
                 // Specify style for your placemark by url
-                StyleUrl = new Uri("#RunStyle"+MyColorRamp.MapValue(line.m_fields.Mhr), UriKind.Relative)
+                StyleUrl = new Uri("#RunStyle" + MapValue(line.m_fields.Mhr), UriKind.Relative)
             };
 
             m_document.AddFeature(placemark);
@@ -122,7 +140,6 @@ namespace GarminRun
 
             // save file to a file stream
             fStream = new FileStream(fn, FileMode.Create);
-            //w_kml = new StreamWriter(fStream, Encoding.UTF8);
 
             kmlFile.Save(fStream);
 
