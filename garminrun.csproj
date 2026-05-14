@@ -15,7 +15,7 @@
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <StartArguments>--file /home/avl/data/src/garmin/activities/2026-05-12-04-18-31.fit</StartArguments>
+        <StartArguments>--file /home/avl/data/src/garmin/activities/2026-04-17-17-00-14.fit --kml --shp</StartArguments>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -26,8 +26,9 @@
 
     <ItemGroup>
       <PackageReference Include="Garmin.FIT.Sdk" Version="21.202.0" />
-      <PackageReference Include="System.CommandLine" Version="2.0.7" />
+      <PackageReference Include="System.CommandLine" Version="2.0.8" />
       <PackageReference Include="ScottPlot" Version="5.1.58" />
+      <PackageReference Include="SharpKml.Core" Version="6.1.0" />
       <Reference Include="lib/ArcShapeFile.dll" />
     </ItemGroup>
 
