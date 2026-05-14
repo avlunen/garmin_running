@@ -1,6 +1,6 @@
 This is a simple commandline app written in C# to read running data from Garmin Fit files; cycling should also be handled at the moment, but needs testing (as I don't cycle). Any running/cycling activity should be handled, such as outdoor run or treadmill.
 
-Optionally, it can write out an ESRI Shapefile (to be used with a GIS program, such as <a href="https://www.qgis.org">QGIS</a>) or a KML file (for Google Maps/Earth) &mdash; or both &mdash; with the running track unless it is an indoor run (e.g., treadmill); furthermore, a CSV file (can be opened in a spreadsheet app) with all the data points listed, and a CSV file with aggregated stats (such as average speed or heart rate). It will also create a PNG file with a chart of the recorded heart rate.
+Optionally, it can write out an ESRI Shapefile (to be used with a GIS program, such as <a href="https://www.qgis.org">QGIS</a>), a KML file (for Google Maps/Earth) or GPX (usable with various apps) &mdash; or all of them &mdash; with the running track unless it is an indoor run (e.g., treadmill); furthermore, a CSV file (can be opened in a spreadsheet app) with all the data points listed, and a CSV file with aggregated stats (such as average speed or heart rate). It will also create a PNG file with a chart of the recorded heart rate.
 
 To run: <tt>./garminrun -h</tt>: will give you hints on what parameters are accetable.
 
@@ -17,6 +17,7 @@ Optional:
     <li><tt>--s</tt>: export aggregated stats only</li>
     <li><tt>--shp</tt>: export running track as Shape file</li>
     <li><tt>--kml</tt>: export running track as KML file</li>
+    <li><tt>--gpx</tt>: export running track as GPX file</li>
     <li><tt>--hr</tt>: export heart rate chart</li>
 </ul>
 
