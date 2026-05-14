@@ -39,6 +39,8 @@ namespace GarminRun
     *   @version 1.0
     *   @since 13 May 2026
     *   @version 1.1
+    *   @since 14 May 2026
+    *   @version 1.2
 */
     public class GarminRunningDecode
     {
@@ -123,7 +125,8 @@ namespace GarminRun
             myPlot.SavePng(fn, 2560, 1024);
         }
 
-        public void DecodeGarmin(string dir, string fn, bool statsOnly = false, bool shpexp = false, bool kmlexp = false, bool hrexp = false)
+        public void DecodeGarmin(string dir, string fn, bool statsOnly = false, bool shpexp = false,
+            bool kmlexp = false, bool hrexp = false, bool gpxexp = false)
         {
             MyLine line = new();
             FileStream fitSource = null;
@@ -263,6 +266,9 @@ namespace GarminRun
 
                             myKML.Export(subDir + "run-" + fnstem + ".kml");
                         }
+
+                        if (gpxexp)
+                            ExportGPX.Export(subDir + "run-" + fnstem + ".gpx", m_timestamps.Min().ToString(), null, null, line);
                     }
                 }
                 // finished
@@ -332,7 +338,7 @@ namespace GarminRun
 
             // TODO altitude looks off, I think there is an offset to be added, need to check SDK docs
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.EnhancedAltitude);
-            if (o_ret != null) field.Malt = (float)o_ret;
+            if (o_ret != null) field.Malt = -(float)o_ret;
             else field.Malt = 0.0f;
 
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.EnhancedSpeed);

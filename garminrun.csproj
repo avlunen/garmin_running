@@ -15,7 +15,7 @@
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <StartArguments>--file /home/avl/data/src/garmin/activities/2026-04-17-17-00-14.fit</StartArguments>
+        <StartArguments>--file /home/avl/data/src/garmin/activities/2026-04-17-17-00-14.fit --gpx</StartArguments>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -25,6 +25,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="BlueToque.SharpGPX" Version="2.25.1230" />
       <PackageReference Include="Garmin.FIT.Sdk" Version="21.202.0" />
       <PackageReference Include="System.CommandLine" Version="2.0.8" />
       <PackageReference Include="ScottPlot" Version="5.1.58" />

@@ -9,6 +9,8 @@ using System.CommandLine;
 *   @author Alexander von L&uuml;nen
 *   @version 1.41
 *   @since 14 May 2026
+*   @version 1.45
+*   @since 14 May 2026
 */
 
 namespace GarminRun
@@ -37,8 +39,12 @@ namespace GarminRun
             {
                 Description = "Export heart rate as chart"
             };
+            Option<bool> gpxOption = new("--gpx")
+            {
+                Description = "Export track as GPX"
+            };
 
-            string root = "Garmin G1 Running Data Export v 1.1 -- Protocol " + Fit.ProtocolMajorVersion.ToString()
+            string root = "Garmin G1 Running Data Export v 1.45 -- Protocol " + Fit.ProtocolMajorVersion.ToString()
                + "." + Fit.ProtocolMinorVersion.ToString() + ", Profile " + Fit.ProfileMajorVersion.ToString()
                + "." + Fit.ProfileMinorVersion.ToString();
 
@@ -48,6 +54,7 @@ namespace GarminRun
             rootCommand.Options.Add(shpOption);
             rootCommand.Options.Add(kmlOption);
             rootCommand.Options.Add(hrOption);
+            rootCommand.Options.Add(gpxOption);
 
             rootCommand.SetAction(parseResult =>
             {
@@ -56,7 +63,8 @@ namespace GarminRun
                 bool shp_exp = parseResult.GetValue(shpOption);
                 bool kml_exp = parseResult.GetValue(kmlOption);
                 bool hr_exp = parseResult.GetValue(hrOption);
-                ReadFile(parsedFile, stats_only, shp_exp, kml_exp, hr_exp);
+                bool gpx_exp = parseResult.GetValue(gpxOption);
+                ReadFile(parsedFile, stats_only, shp_exp, kml_exp, hr_exp, gpx_exp);
                 return 0;
             });
 
@@ -64,14 +72,14 @@ namespace GarminRun
             return parseResult.Invoke();
         }
 
-        internal static void ReadFile(string fn, bool statsMode, bool shp, bool kml, bool hr)
+        internal static void ReadFile(string fn, bool statsMode, bool shp, bool kml, bool hr, bool gpx)
         {
             FileAttributes attr = System.IO.File.GetAttributes(fn);
-            GarminRunningDecode dec = new GarminRunningDecode();
+            GarminRunningDecode dec = new();
 
             if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
             { // Directory
-                DirectoryInfo dir = new DirectoryInfo(fn);
+                DirectoryInfo dir = new(fn);
                 FileInfo[] files = dir.GetFiles("*.fit");
 
                 var progress = new ProgressBar();
@@ -80,7 +88,7 @@ namespace GarminRun
                 foreach (FileInfo file in files)
                 {
                     //Console.WriteLine("Name: " + file.Name);
-                    dec.DecodeGarmin(fn, file.Name, statsMode, shp, kml, hr);
+                    dec.DecodeGarmin(fn, file.Name, statsMode, shp, kml, hr, gpx);
                     double rate = (double)i++ / files.Length;
                     progress.Report(rate);
                     //Console.WriteLine("File {0} out of {1}, ({2}%)", i-1, files.Length, rate);
@@ -90,7 +98,7 @@ namespace GarminRun
             else
             { // File
                 //Console.WriteLine("Name: " + fn);
-                dec.DecodeGarmin("", fn, statsMode, shp, kml, hr);
+                dec.DecodeGarmin("", fn, statsMode, shp, kml, hr, gpx);
             }
             Console.WriteLine("Finished!");
         }
