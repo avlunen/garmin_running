@@ -137,6 +137,7 @@ namespace GarminRun
             bool ret = false;
             string fitfilename = dir;
             string fnstem = "";
+            string prefix = "run-";
             const string subDir = "./output/";
             DirectoryInfo di;
 
@@ -178,6 +179,10 @@ namespace GarminRun
                     return;
                 }
 
+                // set prefix based on activity
+                if (m_activity.Equals(Sport.Cycling)) prefix = "cycl-";
+                else if (m_activity.Equals(Sport.Walking) || m_activity.Equals(Sport.Hiking)) prefix = "walk-";
+
                 // reset members
                 m_distances.Clear();
                 m_heartbeats.Clear();
@@ -191,7 +196,7 @@ namespace GarminRun
                     di = Directory.CreateDirectory(subDir);
 
                 // write avg. data file
-                fs_stats = new FileStream(subDir + "run-" + fnstem + "_stats.csv", FileMode.Create);
+                fs_stats = new FileStream(subDir + prefix + fnstem + "_stats.csv", FileMode.Create);
                 w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
                 w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(mins),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
 
@@ -212,7 +217,7 @@ namespace GarminRun
                 if (!statsOnly)
                 {
                     // write raw data
-                    fs_data = new FileStream(subDir + "run-" + fnstem + ".csv", FileMode.Create);
+                    fs_data = new FileStream(subDir + prefix + fnstem + ".csv", FileMode.Create);
                     w_data = new StreamWriter(fs_data, Encoding.UTF8);
                     w_data.WriteLine("Date,Time,Lat,Lon,Alt,Distance,Heart_Rate,Speed");
 
@@ -225,7 +230,7 @@ namespace GarminRun
 
                     // create HR chart
                     if(hrexp)
-                        CreateHRChart(subDir + "run-" + fnstem + ".png");
+                        CreateHRChart(subDir + prefix + fnstem + ".png");
 
                     // write geo files    
                     if (m_subactivity.Equals(SubSport.Generic)) // only write shapefile if outdoors; TODO needs better check
@@ -255,7 +260,7 @@ namespace GarminRun
                         }
 
                         if (shpexp)
-                            ExportShp.Export(subDir + "run-" + fnstem + ".shp", line);
+                            ExportShp.Export(subDir + prefix + fnstem + ".shp", line);
 
                         if (kmlexp)
                         {
@@ -264,11 +269,11 @@ namespace GarminRun
                             foreach (MyLineSegment mls in line.GetSegs())
                                 myKML.AddLine(mls);
 
-                            myKML.Export(subDir + "run-" + fnstem + ".kml");
+                            myKML.Export(subDir + prefix + fnstem + ".kml");
                         }
 
                         if (gpxexp)
-                            ExportGPX.Export(subDir + "run-" + fnstem + ".gpx", m_timestamps.Min().ToString(), null, null, line);
+                            ExportGPX.Export(subDir + prefix + fnstem + ".gpx", m_timestamps.Min().ToString(), null, null, line);
                     }
                 }
                 // finished
@@ -285,8 +290,14 @@ namespace GarminRun
             }
             catch (Exception ex)
             {
+                Console.WriteLine();
+
                 Console.WriteLine("Exception occurred when trying to decode the FIT file. Message: " + ex.Message);
+                Console.WriteLine("Type of exception: " + ex.GetType());
+                Console.WriteLine("Stacktrace:");
                 Console.WriteLine(ex.StackTrace);
+
+                Console.WriteLine();
             }
             finally
             {
@@ -304,7 +315,8 @@ namespace GarminRun
             if (sp != null) m_activity = (Sport)sp;
             if (ssp != null) m_subactivity = (SubSport)ssp;
 
-            return sp.Equals(Sport.Running) || sp.Equals(Sport.Cycling);
+            return sp.Equals(Sport.Running) || sp.Equals(Sport.Cycling)
+                || sp.Equals(Sport.Walking) || sp.Equals(Sport.Hiking);
         }
 
         private void decodeRecordMesg(RecordMesg mesg)
@@ -325,7 +337,7 @@ namespace GarminRun
             {
                 return;
             }
-            // decode record fields, setting respective field to zero if no record found
+            // decode record fields, setting respective field to zero if no record found2025-04-05-10-13-05.fit
             // (this can happen, for instance, if a GPS connection has not been established,
             // but the run was commenced anyway)
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.HeartRate);

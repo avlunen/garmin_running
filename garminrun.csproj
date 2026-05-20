@@ -7,6 +7,7 @@
         <AssemblyName>garminrun</AssemblyName>
         <PublishSingleFile>true</PublishSingleFile>
         <SelfContained>true</SelfContained>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     </PropertyGroup>
 
@@ -15,7 +16,7 @@
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <StartArguments>--file /home/avl/data/src/garmin/activities/</StartArguments>
+        <StartArguments>--file /home/avl/data/Dropbox/gps/garmin/2026-05-16-20-15-13.fit --hr</StartArguments>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
