@@ -100,18 +100,18 @@ namespace GarminRun
             var endDate = m_timestamps.Max();
             var startDate = m_timestamps.Min();
             System.TimeSpan span = endDate - startDate;
-
+/*
             FileStream fs_dbg = null;
             StreamWriter w_dbg = null;
             fs_dbg = new FileStream(fn + ".log", FileMode.Create);
             w_dbg = new StreamWriter(fs_dbg, Encoding.UTF8);
-
+*/
             foreach (System.DateTime dat in m_timestamps)
             {
                 System.TimeSpan tmp = dat - startDate;
                 dataXL.Add((long)tmp.TotalSeconds);
 
-                w_dbg.WriteLine("Dat: {0}, Tmp: {2}, Dats: {1}", dat.ToString(), (long)tmp.TotalSeconds, tmp.ToString());
+                //w_dbg.WriteLine("Dat: {0}, Tmp: {2}, Dats: {1}", dat.ToString(), (long)tmp.TotalSeconds, tmp.ToString());
             }
 
             var major = Enumerable.Range(0, ((int)span.TotalSeconds / 60)+1).Select(label => new { label, ind = (label * 60) });
@@ -137,10 +137,11 @@ namespace GarminRun
             sp.FillYColor = sp.Color.WithAlpha(.2);
 
             myPlot.SavePng(fn, 2560, 1024);
-
+/*
             w_dbg.Flush();
             fs_dbg.Flush();
             fs_dbg.Close();
+*/
         }
 
         public void DecodeGarmin(string dir, string fn, bool statsOnly = false, bool shpexp = false,

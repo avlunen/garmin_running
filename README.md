@@ -2,7 +2,7 @@ This is a simple commandline app written in C# to read running data from Garmin 
 
 Optionally, it can write out an ESRI Shapefile (to be used with a GIS program, such as <a href="https://www.qgis.org">QGIS</a>), a KML file (for Google Maps/Earth) or GPX (usable with various apps) &mdash; or all of them &mdash; with the running track unless it is an indoor run (e.g., treadmill); furthermore, a CSV file (can be opened in a spreadsheet app) with all the data points listed, and a CSV file with aggregated stats (such as average speed or heart rate). It will also create a PNG file with a chart of the recorded heart rate.
 
-To run: <tt>./garminrun -h</tt>: will give you hints on what parameters are accetable.
+To run: <tt>./garminrun -h</tt>: will give you hints on what parameters are acceptable.
 
 In a nutshell:
 
