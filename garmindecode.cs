@@ -41,6 +41,8 @@ namespace GarminRun
     *   @version 1.1
     *   @since 14 May 2026
     *   @version 1.2
+    *   @since 19 May 2026
+    *   @version 1.3
 */
     public class GarminRunningDecode
     {
@@ -153,7 +155,6 @@ namespace GarminRun
 
                 // Attempt to open .FIT file
                 fitSource = new FileStream(fitfilename, FileMode.Open);
-                //Console.WriteLine("Opening {0}", fn);
 
                 Decode decoderGarmin = new();
 
@@ -161,7 +162,6 @@ namespace GarminRun
                 FitListener fitListener = new();
                 decoderGarmin.MesgEvent += fitListener.OnMesg;
 
-                //Console.WriteLine("Decoding...");
                 decoderGarmin.Read(fitSource);
 
                 FitMessages fitMessages = fitListener.FitMessages;
@@ -198,7 +198,7 @@ namespace GarminRun
                 // write avg. data file
                 fs_stats = new FileStream(subDir + prefix + fnstem + "_stats.csv", FileMode.Create);
                 w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
-                w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(mins),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
+                w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(h:m:s),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
 
                 // decode Garmin data
                 foreach (RecordMesg mesg in fitMessages.RecordMesgs)
@@ -209,9 +209,11 @@ namespace GarminRun
                 // write Avgs
                 var end = System.DateTime.Parse(m_dates.Max() + " " + m_times.Max());
                 var start = System.DateTime.Parse(m_dates.Min() + " " + m_times.Min());
+
                 TimeSpan mins = end.Subtract(start);
+
                 w_stats.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", m_dates.Min(), m_times.Min(), m_dates.Max(), m_times.Max(),
-                    mins.Minutes.ToString() + ":" + mins.Seconds.ToString(), m_distances.Max(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
+                    mins.ToString(), m_distances.Max(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
 
                 // write data
                 if (!statsOnly)
@@ -337,7 +339,7 @@ namespace GarminRun
             {
                 return;
             }
-            // decode record fields, setting respective field to zero if no record found2025-04-05-10-13-05.fit
+            // decode record fields, setting respective field to zero if no record found
             // (this can happen, for instance, if a GPS connection has not been established,
             // but the run was commenced anyway)
             o_ret = decodeField(mesg, RecordMesg.FieldDefNum.HeartRate);

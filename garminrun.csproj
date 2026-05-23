@@ -16,7 +16,7 @@
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <StartArguments>--file /home/avl/data/Dropbox/gps/garmin/2026-05-16-20-15-13.fit --hr</StartArguments>
+        <StartArguments>--file /home/avl/data/Dropbox/gps/garmin/2026-05-22-21-23-01.fit --hr</StartArguments>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -27,7 +27,7 @@
 
     <ItemGroup>
       <PackageReference Include="BlueToque.SharpGPX" Version="2.25.1230" />
-      <PackageReference Include="Garmin.FIT.Sdk" Version="21.202.0" />
+      <PackageReference Include="Garmin.FIT.Sdk" Version="21.205.0" />
       <PackageReference Include="System.CommandLine" Version="2.0.8" />
       <PackageReference Include="ScottPlot" Version="5.1.58" />
       <PackageReference Include="SharpKml.Core" Version="6.1.0" />
