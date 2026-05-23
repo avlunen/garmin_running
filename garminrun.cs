@@ -47,7 +47,7 @@ namespace GarminRun
                 Description = "Export track as GPX"
             };
 
-            string root = "Garmin G1 Running Data Export v 1.45.1 -- Protocol " + Fit.ProtocolMajorVersion.ToString()
+            string root = "Garmin G1 Running Data Export v1.5 -- Protocol " + Fit.ProtocolMajorVersion.ToString()
                + "." + Fit.ProtocolMinorVersion.ToString() + ", Profile " + Fit.ProfileMajorVersion.ToString()
                + "." + Fit.ProfileMinorVersion.ToString();
 
@@ -71,6 +71,7 @@ namespace GarminRun
                 return 0;
             });
 
+            Console.WriteLine(root);
             ParseResult parseResult = rootCommand.Parse(args);
             return parseResult.Invoke();
         }

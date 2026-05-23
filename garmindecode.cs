@@ -45,6 +45,8 @@ namespace GarminRun
     *   @version 1.3
     *   @since 23 May 2026
     *   @version 1.4
+    *   @since 23 May 2026
+    *   @version 1.5
 */
     public class GarminRunningDecode
     {
@@ -94,25 +96,33 @@ namespace GarminRun
             ScottPlot.TickGenerators.NumericManual ticks = new();
             ScottPlot.Plot myPlot = new();
             var dataY = m_heartbeats.ToArray();
-            List<long> dataXL = new List<long>();
+            List<long> dataXL = [];
             var endDate = m_timestamps.Max();
             var startDate = m_timestamps.Min();
             System.TimeSpan span = endDate - startDate;
 
-            foreach(System.DateTime dat in m_timestamps)
+            FileStream fs_dbg = null;
+            StreamWriter w_dbg = null;
+            fs_dbg = new FileStream(fn + ".log", FileMode.Create);
+            w_dbg = new StreamWriter(fs_dbg, Encoding.UTF8);
+
+            foreach (System.DateTime dat in m_timestamps)
             {
                 System.TimeSpan tmp = dat - startDate;
-                long dats = (tmp.Minutes * 60) + tmp.Seconds;
-                dataXL.Add(dats);
+                dataXL.Add((long)tmp.TotalSeconds);
 
-                if (dats % 60 == 0)
-                {
-                    ticks.AddMajor(dats, $"{dats/60}");
-                }
-                else if(dats % 30 == 0)
-                {
-                    ticks.AddMinor(dats);
-                }
+                w_dbg.WriteLine("Dat: {0}, Tmp: {2}, Dats: {1}", dat.ToString(), (long)tmp.TotalSeconds, tmp.ToString());
+            }
+
+            var major = Enumerable.Range(0, ((int)span.TotalSeconds / 60)+1).Select(label => new { label, ind = (label * 60) });
+            foreach(var a in major)
+            {
+                ticks.AddMajor(a.ind, a.label.ToString());
+            }
+
+            for(int b = 30; b <= (int)span.TotalSeconds; b += 60)
+            {
+                ticks.AddMinor(b);
             }
 
             var sp = myPlot.Add.Scatter(dataXL.ToArray(), dataY);
@@ -120,13 +130,17 @@ namespace GarminRun
             myPlot.Title("Heart Rate");
             myPlot.XLabel("Minutes");
             myPlot.YLabel("BPM");
-            myPlot.Axes.SetLimitsX(0, (span.Minutes * 60) + span.Seconds + 10);
+            myPlot.Axes.SetLimitsX(0, (long)span.TotalSeconds + 10);
             myPlot.Axes.SetLimitsY(m_heartbeats.Min()-5, m_heartbeats.Max()+5);
             myPlot.Axes.Bottom.TickGenerator = ticks;
             sp.FillY = true;
             sp.FillYColor = sp.Color.WithAlpha(.2);
 
             myPlot.SavePng(fn, 2560, 1024);
+
+            w_dbg.Flush();
+            fs_dbg.Flush();
+            fs_dbg.Close();
         }
 
         public void DecodeGarmin(string dir, string fn, bool statsOnly = false, bool shpexp = false,
@@ -200,7 +214,7 @@ namespace GarminRun
                 // write avg. data file
                 fs_stats = new FileStream(subDir + prefix + fnstem + "_stats.csv", FileMode.Create);
                 w_stats = new StreamWriter(fs_stats, Encoding.UTF8);
-                w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(h:m:s),Distance(m),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
+                w_stats.WriteLine("Date_Start,Time_Start,Date_End,Time_End,Duration(h:m:s),Distance(m),Max_Heart_Rate(bpm),Avg_Heart_Rate(bpm),Avg_Speed(m/s)");
 
                 // decode Garmin data
                 foreach (RecordMesg mesg in fitMessages.RecordMesgs)
@@ -214,8 +228,8 @@ namespace GarminRun
 
                 TimeSpan mins = end.Subtract(start);
 
-                w_stats.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", m_dates.Min(), m_times.Min(), m_dates.Max(), m_times.Max(),
-                    mins.ToString(), m_distances.Max(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
+                w_stats.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8}", m_dates.Min(), m_times.Min(), m_dates.Max(), m_times.Max(),
+                    mins.ToString(), m_distances.Max(), m_heartbeats.Max().ToString(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
 
                 // write data
                 if (!statsOnly)

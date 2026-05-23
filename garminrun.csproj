@@ -16,7 +16,7 @@
         <DebugType>full</DebugType>
         <Optimize>false</Optimize>
         <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <StartArguments>--file /home/avl/data/Dropbox/gps/garmin/2026-05-22-21-23-01.fit --hr</StartArguments>
+        <StartArguments>--file /home/avl/data/Dropbox/gps/garmin/2026-05-16-20-15-13.fit --hr</StartArguments>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
