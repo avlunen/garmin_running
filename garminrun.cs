@@ -13,6 +13,8 @@ using System.CommandLine;
 *   @since 14 May 2026
 *   @version 1.45.1
 *   @since 14 May 2026
+*   @version 1.5
+*   @since 23 May 2026
 */
 
 namespace GarminRun

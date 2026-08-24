@@ -159,6 +159,7 @@ namespace GarminRun
             string prefix = "run-";
             const string subDir = "./output/";
             DirectoryInfo di;
+            string[] formats = {@"hh\:mm\:ss"};
 
             try
             {
@@ -230,7 +231,7 @@ namespace GarminRun
                 TimeSpan mins = end.Subtract(start);
 
                 w_stats.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8}", m_dates.Min(), m_times.Min(), m_dates.Max(), m_times.Max(),
-                    mins.ToString(), m_distances.Max(), m_heartbeats.Max().ToString(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
+                    mins.ToString(formats[0]), m_distances.Max(), m_heartbeats.Max().ToString(), Math.Round(AvgHeartBeat(), 2), Math.Round(AvgSpeeds(), 2));
 
                 // write data
                 if (!statsOnly)
