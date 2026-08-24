@@ -47,6 +47,8 @@ namespace GarminRun
     *   @version 1.4
     *   @since 23 May 2026
     *   @version 1.5
+    *   @since 24 August 2026
+    *   @version 1.51
 */
     public class GarminRunningDecode
     {
